@@ -3,26 +3,52 @@
 A single-page static site. No build step, no WordPress, no database. Open `index.html` in a browser and it works.
 
 ```
-index.html      the page
-css/site.css    styles (light and dark themes)
-js/site.js      mobile menu, gallery filters, lightbox (page works without it)
-img/            photos as WebP, two sizes each (-700 for the grid, -1400 for full view)
+site/                     the deployable. Upload this folder's contents anywhere, as-is.
+  index.html              the page
+  css/site.css            styles (light and dark themes)
+  js/site.js              mobile menu, gallery filters, lightbox (page works without it)
+  img/                    photos as WebP, two sizes each (-700 for the grid, -1400 for full view)
+  .nojekyll               tells GitHub Pages to serve the folder untouched
+.github/workflows/        deploys site/ to GitHub Pages on push
+README.md                 this file
 ```
 
-## Hosting (free)
+Everything outside `site/` is repo plumbing. Only `site/` goes to a host.
 
-Any of these serve a folder of static files for free with HTTPS. Cloudflare Pages is the best fit since the domain already sits on Cloudflare.
+## Hosting
 
-**Cloudflare Pages**
-1. Push this folder to a GitHub repo (or use "Direct upload" in the Pages dashboard and drag the folder in).
-2. Cloudflare dashboard → Workers & Pages → Create → Pages. Build command: none. Output directory: `/`.
-3. Custom domains → add `tearexwoodworks.com` and `www`. Since DNS is already on Cloudflare it wires itself up.
+The domain is registered at Network Solutions and its DNS is served by Bluehost's nameservers. Two sensible paths:
 
-**Netlify**: drag the folder onto app.netlify.com/drop. Add the domain under Domain settings.
+**Option A: stay on Bluehost, drop WordPress (easiest, nothing to move)**
+1. Bluehost cPanel → File Manager → `public_html`.
+2. Delete the WordPress files (or move them into a `_old` folder for a while).
+3. Upload the contents of `site/` (`index.html`, `css/`, `js/`, `img/`) into `public_html`.
+4. Done. Domain, SSL and DNS stay exactly as they are. He keeps paying Bluehost, but the site is now four files instead of a WordPress install to keep patched.
 
-**GitHub Pages**: push to a repo, Settings → Pages → deploy from `main`, root. Point the domain at GitHub's IPs.
+**Option B: Cloudflare Pages (free, cancel Bluehost)**
+1. Create a free Cloudflare account and add `tearexwoodworks.com`. Cloudflare copies the existing DNS records.
+2. Cloudflare gives you two nameservers. Log in to Network Solutions and replace the Bluehost nameservers with those. Takes up to a day to propagate.
+3. Cloudflare → Workers & Pages → Create → Pages → Direct upload. Drag the `site/` folder in. Build command: none.
+4. Custom domains → add `tearexwoodworks.com` and `www`. Cloudflare writes the DNS record itself.
+5. Once it resolves, cancel the Bluehost plan.
 
-After it's live, cancel the Bluehost/WordPress plan.
+Before doing B, check whether any email at the domain runs through Bluehost. The contact address is Gmail, so probably not, but if there are MX records they need to survive the move (step 1 copies them).
+
+**Option C: GitHub Pages (free, deploys on every push)**
+
+The repo already carries the workflow in `.github/workflows/pages.yml`. It publishes `site/` whenever `main` is pushed.
+
+1. Create a GitHub repo and push this folder to it (`main` branch).
+2. Repo → Settings → Pages → Source: **GitHub Actions**. The first push after that runs the workflow and the site appears at `https://<user>.github.io/<repo>/`.
+3. For the real domain: Settings → Pages → Custom domain → `tearexwoodworks.com`, then tick "Enforce HTTPS" once it verifies.
+4. At Bluehost (or wherever DNS ends up), add these records:
+   - `A` records for the apex `@` pointing at `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+   - `CNAME` for `www` pointing at `<user>.github.io`
+5. Cancel the Bluehost hosting once the domain resolves to GitHub. If DNS stays at Bluehost the nameservers don't change, so email and everything else stay put.
+
+Updates are then just "edit, commit, push". No FTP.
+
+Netlify (drag onto app.netlify.com/drop) also works but needs the same DNS change as B or C, and adds nothing over them here.
 
 ## The quote form
 
@@ -34,11 +60,11 @@ If you'd rather not depend on a third party, delete the `<form>` and keep the em
 
 1. Export the photo, then make two WebP copies:
    ```
-   cwebp -q 80 -resize 700 0 photo.jpg -o img/name-700.webp
-   cwebp -q 80 -resize 1400 0 photo.jpg -o img/name-1400.webp
+   cwebp -q 80 -resize 700 0 photo.jpg -o site/img/name-700.webp
+   cwebp -q 80 -resize 1400 0 photo.jpg -o site/img/name-1400.webp
    ```
    (`brew install webp` gives you `cwebp`. Any image tool that outputs WebP or JPEG is fine too.)
-2. Copy one of the `<figure class="piece">` blocks in `index.html`, change the two image paths, the `alt` text, the title and the tag.
+2. Copy one of the `<figure class="piece">` blocks in `site/index.html`, change the two image paths, the `alt` text, the title and the tag.
 3. Set `data-kind` to `wildlife`, `signs`, `portraits` or `art` so the filter buttons pick it up.
 
 ## Copy to confirm with the owner
@@ -48,5 +74,6 @@ The old site's contact block still had WordPress template placeholders (123 Craf
 - "Southeastern Pennsylvania" / "near Philadelphia" for location (hero, shop section, footer).
 - The wood species list in the shop section (cherry, walnut, mahogany, oak).
 - "Pickup or ship" and the turnaround wording in How it works.
+- The size line in the workshop facts. Replacing "up to the size of the CNC bed" with the actual bed size (for example "up to 24 x 48 in") is more useful to a customer.
 - Gallery titles. Adding wood species and size to each caption (for example "Walnut, 8 x 30 in") would make the gallery stronger.
 - Social links. The old site's Facebook/Instagram links were empty placeholders, so none are included. Add real ones to the footer if he has them.
