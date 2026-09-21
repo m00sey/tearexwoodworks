@@ -36,9 +36,9 @@ Before doing B, check whether any email at the domain runs through Bluehost. The
 
 ## Preview builds (GitHub Pages)
 
-This is for tweaking, not for his hosting. The workflow in `.github/workflows/pages.yml` publishes `site/` to `https://<user>.github.io/<repo>/` on every push to `main`, so a change can be looked at on a real URL and a phone before it goes to Bluehost.
+This is for tweaking, not for his hosting. The workflow in `.github/workflows/pages.yml` publishes `site/` to https://m00sey.github.io/tearexwoodworks/ on every push to `main`, so a change can be looked at on a real URL and a phone before it goes to Bluehost.
 
-One-time setup after pushing the repo: Settings → Pages → Source: **GitHub Actions**. That's it. All paths in the page are relative, so it works under the `/<repo>/` subpath without any changes.
+One-time setup after pushing the repo: Settings → Pages → Source: **GitHub Actions**. That's it. All paths in the page are relative, so it works under the `/tearexwoodworks/` subpath without any changes.
 
 When a version is ready for him, upload the contents of `site/` to Bluehost as in Option A.
 
