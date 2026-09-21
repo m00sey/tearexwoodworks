@@ -9,7 +9,7 @@ site/                     the deployable. Upload this folder's contents anywhere
   js/site.js              mobile menu, gallery filters, lightbox (page works without it)
   img/                    photos as WebP, two sizes each (-700 for the grid, -1400 for full view)
   .nojekyll               tells GitHub Pages to serve the folder untouched
-.github/workflows/        deploys site/ to GitHub Pages on push
+.github/workflows/        preview deploy of site/ to GitHub Pages (for tweaking, not his hosting)
 README.md                 this file
 ```
 
@@ -17,7 +17,7 @@ Everything outside `site/` is repo plumbing. Only `site/` goes to a host.
 
 ## Hosting
 
-The domain is registered at Network Solutions and its DNS is served by Bluehost's nameservers. Two sensible paths:
+The domain is registered at Network Solutions and its DNS is served by Bluehost's nameservers. He's staying on Bluehost, which is Option A. Option B is there if he ever wants to stop paying for hosting.
 
 **Option A: stay on Bluehost, drop WordPress (easiest, nothing to move)**
 1. Bluehost cPanel → File Manager → `public_html`.
@@ -34,21 +34,13 @@ The domain is registered at Network Solutions and its DNS is served by Bluehost'
 
 Before doing B, check whether any email at the domain runs through Bluehost. The contact address is Gmail, so probably not, but if there are MX records they need to survive the move (step 1 copies them).
 
-**Option C: GitHub Pages (free, deploys on every push)**
+## Preview builds (GitHub Pages)
 
-The repo already carries the workflow in `.github/workflows/pages.yml`. It publishes `site/` whenever `main` is pushed.
+This is for tweaking, not for his hosting. The workflow in `.github/workflows/pages.yml` publishes `site/` to `https://<user>.github.io/<repo>/` on every push to `main`, so a change can be looked at on a real URL and a phone before it goes to Bluehost.
 
-1. Create a GitHub repo and push this folder to it (`main` branch).
-2. Repo → Settings → Pages → Source: **GitHub Actions**. The first push after that runs the workflow and the site appears at `https://<user>.github.io/<repo>/`.
-3. For the real domain: Settings → Pages → Custom domain → `tearexwoodworks.com`, then tick "Enforce HTTPS" once it verifies.
-4. At Bluehost (or wherever DNS ends up), add these records:
-   - `A` records for the apex `@` pointing at `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-   - `CNAME` for `www` pointing at `<user>.github.io`
-5. Cancel the Bluehost hosting once the domain resolves to GitHub. If DNS stays at Bluehost the nameservers don't change, so email and everything else stay put.
+One-time setup after pushing the repo: Settings → Pages → Source: **GitHub Actions**. That's it. All paths in the page are relative, so it works under the `/<repo>/` subpath without any changes.
 
-Updates are then just "edit, commit, push". No FTP.
-
-Netlify (drag onto app.netlify.com/drop) also works but needs the same DNS change as B or C, and adds nothing over them here.
+When a version is ready for him, upload the contents of `site/` to Bluehost as in Option A.
 
 ## The quote form
 
