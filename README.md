@@ -55,9 +55,9 @@ If you'd rather not depend on a third party, Bluehost runs PHP, so a small mail 
 
 ## Contact details on the page
 
-The only contact details on the page are the form and the Google Voice number. No email address, no cell. Reasons and what to do when that changes:
+The only way in from the page is the form. No email address, no phone number. Reasons and what to do when that changes:
 
-- **Phone.** The number on the page is a Google Voice number that forwards to his cell, with call screening on. If it gets abused, drop it in Google Voice and update the two `tel:` links in `site/index.html`. His cell is not on the site.
+- **Phone.** There is a Google Voice number that forwards to his cell with screening on, but it is not on the page. If he wants it there, the snippet is in the go-live checklist. His cell is never on the site.
 - **Email.** Publishing it in a `mailto:` link is what fills an inbox with spam. If he wants it visible anyway, put it in as text with the `@` spelled out, not as a link.
 
 ## Go-live checklist (do this sitting with him)
@@ -70,7 +70,7 @@ Needs his phone in hand and his Gmail logged in. About 30 minutes.
 3. It asks for a forwarding phone. Enter his cell and type in the SMS code it sends.
 4. Settings → Calls: forwarding to his cell on, **Screen calls on** (callers say their name before it rings through). Record a short voicemail greeting.
 5. Install the Google Voice app on his phone and sign in. Texts to the number arrive there, and he can reply from it.
-6. Done. The number (609) 526-1578 is already on the site.
+6. Decide whether it goes on the site. It's not there right now.
 
 **2. FormSubmit activation (5 min)**
 1. Open the preview at https://m00sey.github.io/tearexwoodworks/ and submit the quote form once with obvious test text. The captcha appears, then a "check your email" page. This first one is not delivered.
@@ -83,7 +83,11 @@ Needs his phone in hand and his Gmail logged in. About 30 minutes.
    ```js
    var FORM_ENDPOINT = 'https://formsubmit.co/<random string>';
    ```
-2. The Google Voice number is already in `site/index.html` (contact section and footer). If it ever changes, search for `tel:` and update both.
+2. If the number is going on the page, add under the contact heading paragraph in `site/index.html`:
+   ```html
+   <p class="direct-line">Call or text <a href="tel:+1XXXXXXXXXX">(XXX) XXX-XXXX</a></p>
+   ```
+   The style for that line already exists.
 3. Commit, push, wait a minute, hard-refresh the preview and check both the number and the form.
 
 **4. Bluehost (10 min)**
