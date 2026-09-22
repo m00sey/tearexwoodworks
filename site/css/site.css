@@ -291,6 +291,9 @@ p { margin: 0; max-width: var(--measure); }
 @media (max-width: 860px) { .contact .wrap { grid-template-columns: 1fr; } }
 .contact-side { display: grid; gap: 1.25rem; align-content: start; }
 .contact-side p { color: var(--ink-2); }
+.direct-line { font-weight: 700; font-size: 1.15rem; }
+.direct-line a { color: var(--ink); text-decoration: none; }
+.direct-line a:hover { color: var(--accent); }
 .form { display: grid; gap: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(1.25rem, 3vw, 2rem); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }

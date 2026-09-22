@@ -55,10 +55,43 @@ If you'd rather not depend on a third party, Bluehost runs PHP, so a small mail 
 
 ## Contact details on the page
 
-There is no email address or phone number visible on the page on purpose. The form is the only way in. Reasons and what to do when that changes:
+The only contact details on the page are the form and the Google Voice number. No email address, no cell. Reasons and what to do when that changes:
 
-- **Phone.** His cell was on the old site. It's been removed pending a Google Voice number (free, forwards to his cell, can be dropped if abused). When there is one, add a line under the contact heading in `site/index.html` and a `tel:` link in the footer.
+- **Phone.** The number on the page is a Google Voice number that forwards to his cell, with call screening on. If it gets abused, drop it in Google Voice and update the two `tel:` links in `site/index.html`. His cell is not on the site.
 - **Email.** Publishing it in a `mailto:` link is what fills an inbox with spam. If he wants it visible anyway, put it in as text with the `@` spelled out, not as a link.
+
+## Go-live checklist (do this sitting with him)
+
+Needs his phone in hand and his Gmail logged in. About 30 minutes.
+
+**1. Google Voice number (10 min)**
+1. On his laptop, go to voice.google.com signed in as the shop Gmail account, not his personal one.
+2. Choose a number. Search by city or the 610 area code so it looks local.
+3. It asks for a forwarding phone. Enter his cell and type in the SMS code it sends.
+4. Settings → Calls: forwarding to his cell on, **Screen calls on** (callers say their name before it rings through). Record a short voicemail greeting.
+5. Install the Google Voice app on his phone and sign in. Texts to the number arrive there, and he can reply from it.
+6. Done. The number (609) 526-1578 is already on the site.
+
+**2. FormSubmit activation (5 min)**
+1. Open the preview at https://m00sey.github.io/tearexwoodworks/ and submit the quote form once with obvious test text. The captcha appears, then a "check your email" page. This first one is not delivered.
+2. In his Gmail, open the FormSubmit email and click **Activate Form**. Check spam if it's not there.
+3. The page that opens shows his **random-like string** (also in FormSubmit's follow-up email). Copy it.
+4. Submit the form a second time. This one should land in his inbox. If it does, the form works.
+
+**3. Put both into the site (5 min)**
+1. In `site/js/site.js`, replace the `FORM_ENDPOINT` line with
+   ```js
+   var FORM_ENDPOINT = 'https://formsubmit.co/<random string>';
+   ```
+2. The Google Voice number is already in `site/index.html` (contact section and footer). If it ever changes, search for `tel:` and update both.
+3. Commit, push, wait a minute, hard-refresh the preview and check both the number and the form.
+
+**4. Bluehost (10 min)**
+1. Bluehost → cPanel → File Manager → `public_html`.
+2. Select everything there and move it into a new folder called `_old-wordpress`. Don't delete it yet.
+3. Upload the contents of `site/` (`index.html`, `css`, `js`, `img`, `.nojekyll` is harmless). Zip the folder first and use "Extract" in File Manager, it's faster than uploading 30 files.
+4. Load tearexwoodworks.com. If the old site still shows, it's Bluehost's Cloudflare cache: cPanel → Cloudflare → Purge, or wait a few minutes.
+5. Once it's right, delete `_old-wordpress` and, in Bluehost's WordPress tools, remove the WordPress install so it stops needing updates.
 
 ## Adding a piece to the gallery
 
