@@ -32,7 +32,7 @@ The domain is registered at Network Solutions and its DNS is served by Bluehost'
 4. Custom domains → add `tearexwoodworks.com` and `www`. Cloudflare writes the DNS record itself.
 5. Once it resolves, cancel the Bluehost plan.
 
-Before doing B, check whether any email at the domain runs through Bluehost. The contact address is Gmail, so probably not, but if there are MX records they need to survive the move (step 1 copies them).
+Before doing B, check whether any email at the domain runs through Bluehost. His contact address is a Gmail one, so probably not, but if there are MX records they need to survive the move (step 1 copies them).
 
 ## Preview builds (GitHub Pages)
 
@@ -44,7 +44,7 @@ When a version is ready for him, upload the contents of `site/` to Bluehost as i
 
 ## The quote form
 
-The form posts to [FormSubmit](https://formsubmit.co), which forwards submissions to `tearexwoodworks@gmail.com`. Nothing to install. FormSubmit's captcha is on and the form has a honeypot field.
+The form posts to [FormSubmit](https://formsubmit.co), which forwards submissions to his Gmail inbox. Nothing to install. FormSubmit's captcha is on and the form has a honeypot field.
 
 The address is not in the HTML. `site/js/site.js` assembles the endpoint at runtime (`FORM_ENDPOINT`) so it isn't sitting in the page source for scrapers. Two steps to finish it off:
 
@@ -73,7 +73,7 @@ There is no email address or phone number visible on the page on purpose. The fo
 
 ## Copy to confirm with the owner
 
-The old site's contact block still had WordPress template placeholders (123 Craft Lane, (123) 456-7890). Those are gone. The following is written from the photos and the 610 area code and should be checked:
+The old site's contact block still had WordPress template placeholders (123 Craft Lane, (123) 456-7890). Those are gone. The following is written from the photos and the area code on the old site and should be checked:
 
 - "Southeastern Pennsylvania" / "near Philadelphia" for location (hero, workshop section, footer).
 - The wood species list in the shop section (cherry, walnut, mahogany, oak).
