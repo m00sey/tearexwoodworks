@@ -44,9 +44,21 @@ When a version is ready for him, upload the contents of `site/` to Bluehost as i
 
 ## The quote form
 
-The form posts to [FormSubmit](https://formsubmit.co), which forwards submissions to `tearexwoodworks@gmail.com`. Nothing to install. The first time someone submits, FormSubmit sends a one-time activation email to that Gmail address. Click the link once and every submission after that lands in the inbox.
+The form posts to [FormSubmit](https://formsubmit.co), which forwards submissions to `tearexwoodworks@gmail.com`. Nothing to install. FormSubmit's captcha is on and the form has a honeypot field.
 
-If you'd rather not depend on a third party, delete the `<form>` and keep the email and phone links. They work anywhere.
+The address is not in the HTML. `site/js/site.js` assembles the endpoint at runtime (`FORM_ENDPOINT`) so it isn't sitting in the page source for scrapers. Two steps to finish it off:
+
+1. **Activate.** The first real submission triggers a one-time activation email to the Gmail address. Click the link.
+2. **Swap in the random endpoint.** After activation, FormSubmit provides a random string that can be used in place of the email (it's in the activation flow, and under "Random-like string" in their docs). Set `FORM_ENDPOINT` in `site/js/site.js` to `https://formsubmit.co/<that string>`. Now the address appears nowhere in the site.
+
+If you'd rather not depend on a third party, Bluehost runs PHP, so a small mail handler is the next step up.
+
+## Contact details on the page
+
+There is no email address or phone number visible on the page on purpose. The form is the only way in. Reasons and what to do when that changes:
+
+- **Phone.** His cell was on the old site. It's been removed pending a Google Voice number (free, forwards to his cell, can be dropped if abused). When there is one, add a line under the contact heading in `site/index.html` and a `tel:` link in the footer.
+- **Email.** Publishing it in a `mailto:` link is what fills an inbox with spam. If he wants it visible anyway, put it in as text with the `@` spelled out, not as a link.
 
 ## Adding a piece to the gallery
 
@@ -63,7 +75,7 @@ If you'd rather not depend on a third party, delete the `<form>` and keep the em
 
 The old site's contact block still had WordPress template placeholders (123 Craft Lane, (123) 456-7890). Those are gone. The following is written from the photos and the 610 area code and should be checked:
 
-- "Southeastern Pennsylvania" / "near Philadelphia" for location (hero, shop section, footer).
+- "Southeastern Pennsylvania" / "near Philadelphia" for location (hero, workshop section, footer).
 - The wood species list in the shop section (cherry, walnut, mahogany, oak).
 - "Pickup or ship" and the turnaround wording in How it works.
 - The size line in the workshop facts. Replacing "up to the size of the CNC bed" with the actual bed size (for example "up to 24 x 48 in") is more useful to a customer.

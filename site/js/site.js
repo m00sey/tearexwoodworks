@@ -1,5 +1,12 @@
 // Tea Rex Woodworks — small progressive enhancements. Page works fully without this file.
 (function () {
+  // Quote form endpoint. Kept out of the markup so the address isn't sitting in the page source.
+  // After FormSubmit activation, replace the atob() expression with the random string they issue,
+  // e.g. FORM_ENDPOINT = 'https://formsubmit.co/abc123def456...';
+  var FORM_ENDPOINT = 'https://formsubmit.co/' + atob('dGVhcmV4d29vZHdvcmtzQGdtYWlsLmNvbQ==');
+  var form = document.getElementById('quote-form');
+  if (form) form.action = FORM_ENDPOINT;
+
   // Mobile nav
   var toggle = document.querySelector('.nav-toggle');
   var nav = document.getElementById('nav');
