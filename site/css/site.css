@@ -111,6 +111,8 @@ p { margin: 0; max-width: var(--measure); }
 }
 .wrap { width: min(var(--wrap), 100%); margin-inline: auto; padding-inline: var(--gutter); }
 .section { padding-block: clamp(3.5rem, 6vw, 6.5rem); }
+/* Anchor targets clear the sticky header. */
+.section, .makes, #quote-form, #top { scroll-margin-top: 72px; }
 .section-head { display: grid; gap: .75rem; margin-bottom: clamp(2rem, 4vw, 3rem); }
 .section-head p { color: var(--ink-2); font-size: 1.125rem; max-width: none; }
 .skip {
@@ -308,6 +310,9 @@ p { margin: 0; max-width: var(--measure); }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
 .form-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 .form-foot small { color: var(--muted); }
+.form-status { padding: .7rem .9rem; border-radius: var(--radius); font-weight: 600; border: 1px solid var(--line); outline: none; }
+.form-status.is-ok { background: var(--accent-soft); color: var(--ink); border-color: var(--accent); }
+.form-status.is-err { background: var(--surface); color: var(--ink); border-color: var(--wood); }
 .honey { position: absolute; left: -9999px; }
 
 /* ---------- footer ---------- */

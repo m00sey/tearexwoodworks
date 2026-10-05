@@ -10,6 +10,7 @@ site/                     the deployable. Upload this folder's contents anywhere
   img/                    photos as WebP, two sizes each (-700 for the grid, -1400 for full view)
   .nojekyll               tells GitHub Pages to serve the folder untouched
 .github/workflows/        preview deploy of site/ to GitHub Pages (for tweaking, not his hosting)
+tools/add-image.py        resizes and watermarks a photo for the gallery
 README.md                 this file
 ```
 
@@ -44,14 +45,17 @@ When a version is ready for him, upload the contents of `site/` to Bluehost as i
 
 ## The quote form
 
-The form posts to [FormSubmit](https://formsubmit.co), which forwards submissions to his Gmail inbox. Nothing to install. FormSubmit's captcha is on and the form has a honeypot field.
+The form posts to `contact.php` on the same domain, which sends it to his inbox through Gmail's SMTP server using his Google account and an App Password (Google account → Security → 2-Step Verification → App passwords). Gmail to Gmail, so nothing lands in spam and Bluehost's mail server, which his plan doesn't include, is never involved. If the App Password is left blank the handler falls back to PHP `mail()`, which is unreliable on Bluehost. No third-party form service, nothing that a filtering DNS can block. Spam control is a honeypot field, a 3-second timing check, and validation (real email, details at least 10 characters).
 
-The address is not in the HTML. `site/js/site.js` assembles the endpoint at runtime (`FORM_ENDPOINT`) so it isn't sitting in the page source for scrapers. Two steps to finish it off:
+The destination address lives in `site/contact-config.php`, which is gitignored so it never lands in the repo. `contact-config.sample.php` shows the shape. The zip built from `site/` includes the real config, so a Bluehost upload has everything; a fresh clone of the repo does not, and needs the file recreated from the sample.
 
-1. **Activate.** The first real submission triggers a one-time activation email to the Gmail address. Click the link.
-2. **Swap in the random endpoint.** After activation, FormSubmit provides a random string that can be used in place of the email (it's in the activation flow, and under "Random-like string" in their docs). Set `FORM_ENDPOINT` in `site/js/site.js` to `https://formsubmit.co/<that string>`. Now the address appears nowhere in the site.
+`.htaccess` blocks direct requests to both config files.
 
-If you'd rather not depend on a third party, Bluehost runs PHP, so a small mail handler is the next step up.
+After a submission the handler redirects back to `/?sent=1#contact` (or `sent=0`) and the page shows a message.
+
+Every attempt writes one line to `public_html/contact-log.txt` (blocked from the web): time, IP, outcome. `contact.php?ping=1` in a browser confirms the handler is live, the log is writable, and which transport is configured. If the App Password is ever revoked, the log shows `smtp FAILED: AUTH pass`, and a new one goes into `contact-config.php`.
+
+The GitHub Pages preview can't run PHP, so the script disables the form there with a note. FormSubmit is no longer used.
 
 ## Contact details on the page
 
@@ -72,17 +76,10 @@ Needs his phone in hand and his Gmail logged in. About 30 minutes.
 5. Install the Google Voice app on his phone and sign in. Texts to the number arrive there, and he can reply from it.
 6. Decide whether it goes on the site. It's not there right now.
 
-**2. FormSubmit activation (5 min)**
-1. Open the preview at https://m00sey.github.io/tearexwoodworks/ and submit the quote form once with obvious test text. The captcha appears, then a "check your email" page. This first one is not delivered.
-2. In his Gmail, open the FormSubmit email and click **Activate Form**. Check spam if it's not there.
-3. The page that opens shows his **random-like string** (also in FormSubmit's follow-up email). Copy it.
-4. Submit the form a second time. This one should land in his inbox. If it does, the form works.
+**2. Form** — self-hosted in `contact.php`, nothing to set up. Test it once from the live site after upload.
 
 **3. Put both into the site (5 min)**
-1. In `site/js/site.js`, replace the `FORM_ENDPOINT` line with
-   ```js
-   var FORM_ENDPOINT = 'https://formsubmit.co/<random string>';
-   ```
+1. The form needs nothing; the config ships in the zip.
 2. If the number is going on the page, add under the contact heading paragraph in `site/index.html`:
    ```html
    <p class="direct-line">Call or text <a href="tel:+1XXXXXXXXXX">(XXX) XXX-XXXX</a></p>
@@ -97,16 +94,29 @@ Needs his phone in hand and his Gmail logged in. About 30 minutes.
 4. Load tearexwoodworks.com. If the old site still shows, it's Bluehost's Cloudflare cache: cPanel → Cloudflare → Purge, or wait a few minutes.
 5. Once it's right, delete `_old-wordpress` and, in Bluehost's WordPress tools, remove the WordPress install so it stops needing updates.
 
+## Updating the live site (cache)
+
+Bluehost fronts the site with Cloudflare, and `.htaccess` tells browsers to cache css/js for a day and images for 30 days. So after uploading a changed file:
+
+1. Bump the version on the css/js links in `site/index.html` (`?v=20260922` → today's date). A changed `index.html` is always fetched fresh; the version string makes the browser fetch the new css/js too.
+2. Upload the changed files and the new `index.html`.
+3. If people still see the old version, cPanel → Cloudflare → Purge Everything.
+
+Images are only cached by filename, so a replaced photo needs a new filename.
+
 ## Adding a piece to the gallery
 
-1. Export the photo, then make two WebP copies:
+Every photo on the site carries a small "© TEA REX WOODWORKS" watermark in the bottom-right corner. `tools/add-image.py` resizes, watermarks and converts in one step, so don't put photos into `site/img/` by hand.
+
+1. Export the photo as JPEG or PNG (for an iPhone HEIC: `sips -s format jpeg photo.heic --out photo.jpg`), then:
    ```
-   cwebp -q 80 -resize 700 0 photo.jpg -o site/img/name-700.webp
-   cwebp -q 80 -resize 1400 0 photo.jpg -o site/img/name-1400.webp
+   tools/add-image.py photo.jpg name
    ```
-   (`brew install webp` gives you `cwebp`. Any image tool that outputs WebP or JPEG is fine too.)
-2. Copy one of the `<figure class="piece">` blocks in `site/index.html`, change the two image paths, the `alt` text, the title and the tag.
+   That writes `site/img/name-700.webp` and `site/img/name-1400.webp`, both watermarked, and prints a `<figure>` block with the right paths and dimensions. It needs Pillow once: `pip3 install pillow`.
+2. Paste the block into the gallery in `site/index.html` and fill in the `alt` text, the title and the tag.
 3. Set `data-kind` to `wildlife`, `signs`, `portraits` or `art` so the filter buttons pick it up.
+
+Always start from the original photo, not a file already in `site/img/`. The script won't watermark the same file twice (stamped files carry a copyright tag in their metadata), and it refuses to overwrite an existing name. A WebP that got into `site/img/` without a watermark can be stamped in place with `tools/add-image.py --stamp site/img/name-700.webp site/img/name-1400.webp`. The wording, size and opacity of the mark are constants at the top of the script.
 
 ## Copy to confirm with the owner
 

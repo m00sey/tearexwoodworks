@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
-<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/site.css?v=20260923c">
 </head>
 <body>
 <a class="skip" href="#work">Skip to the work</a>
@@ -202,14 +202,14 @@
         <h2 id="contact-title">Send the idea</h2>
         <p>Tell us what you have in mind. You’ll get a reply by email with a rough price, a timeline and where to send photos. No obligation.</p>
       </div>
-      <form class="form" id="quote-form" action="#contact" method="POST">
-        <input type="hidden" name="_subject" value="Quote request from tearexwoodworks.com">
-        <input type="hidden" name="_template" value="table">
+      <form class="form" id="quote-form" action="contact.php" method="POST">
+        <p class="form-status" id="form-status" role="status" hidden></p>
+        <input type="hidden" name="_t" id="f-t" value="">
         <input type="text" name="_honey" class="honey" tabindex="-1" autocomplete="off" aria-hidden="true">
         <div class="form-row">
           <div class="field">
             <label for="f-name">Your name</label>
-            <input id="f-name" name="name" type="text" autocomplete="name" required>
+            <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="120">
           </div>
           <div class="field">
             <label for="f-email">Email</label>
@@ -234,11 +234,11 @@
         <div class="field">
           <label for="f-details">Tell us about it</label>
           <small>Subject, rough size, wood preference if you have one, and when you need it.</small>
-          <textarea id="f-details" name="details" required></textarea>
+          <textarea id="f-details" name="details" required minlength="8"></textarea>
         </div>
         <div class="form-foot">
           <button class="btn btn-primary" type="submit">Send request</button>
-          <small>Replies come from the shop’s email, usually within a couple of days.</small>
+          <small id="form-note">Replies come from the shop’s email, usually within a couple of days.</small>
         </div>
       </form>
     </div>
@@ -252,6 +252,7 @@
       <img src="img/logo-white.png" alt="" width="34" height="34">
       <span>Tea Rex Woodworks · Southeastern Pennsylvania</span>
     </div>
+    <span>&copy; 2026 Tea Rex Woodworks, LLC</span>
     <span><a href="#contact">Get a quote</a></span>
   </div>
 </footer>
@@ -268,6 +269,6 @@
   </div>
 </dialog>
 
-<script src="js/site.js" defer></script>
+<script src="js/site.js?v=20260923c" defer></script>
 </body>
 </html>

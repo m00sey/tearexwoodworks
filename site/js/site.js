@@ -1,11 +1,42 @@
 // Tea Rex Woodworks — small progressive enhancements. Page works fully without this file.
 (function () {
-  // Quote form endpoint. Kept out of the markup so the address isn't sitting in the page source.
-  // After FormSubmit activation, replace the atob() expression with the random string they issue,
-  // e.g. FORM_ENDPOINT = 'https://formsubmit.co/abc123def456...';
-  var FORM_ENDPOINT = 'https://formsubmit.co/' + atob('dGVhcmV4d29vZHdvcmtzQGdtYWlsLmNvbQ==');
+  // Quote form. Posts to contact.php on the same host (see site/contact.php).
   var form = document.getElementById('quote-form');
-  if (form) form.action = FORM_ENDPOINT;
+  var status = document.getElementById('form-status');
+  if (form) {
+    // Timestamp the form so contact.php can drop instant bot submissions.
+    var stamp = document.getElementById('f-t');
+    if (stamp) stamp.value = String(Date.now());
+
+    // Result message after the redirect back from contact.php.
+    var params = new URLSearchParams(location.search);
+    var sent = params.get('sent');
+    if (sent !== null && status) {
+      var why = {
+        name: 'That didn’t send: please add your name.',
+        email: 'That didn’t send: that email address doesn’t look right.',
+        details: 'That didn’t send: tell us a little more about the piece (a sentence is plenty).'
+      }[params.get('why')] || 'That didn’t send. Check your name, email and details, then try again.';
+      status.textContent = sent === '1' ? 'Sent. You’ll hear back by email.' : why;
+      status.className = 'form-status ' + (sent === '1' ? 'is-ok' : 'is-err');
+      status.hidden = false;
+      if (sent === '1') form.reset();
+      history.replaceState(null, '', location.pathname + '#quote-form');
+      // Make sure the message is actually on screen, whatever the layout.
+      setTimeout(function () {
+        status.scrollIntoView({ block: 'center', behavior: 'auto' });
+        status.setAttribute('tabindex', '-1');
+        status.focus({ preventScroll: true });
+      }, 0);
+    }
+
+    // Only the real host runs contact.php. Previews (GitHub Pages, artifacts) just show the form.
+    if (!/(^|\.)tearexwoodworks\.com$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+      var note = document.getElementById('form-note');
+      if (note) note.textContent = 'Preview only. The form sends on the live site.';
+      form.addEventListener('submit', function (e) { e.preventDefault(); });
+    }
+  }
 
   // Mobile nav
   var toggle = document.querySelector('.nav-toggle');
