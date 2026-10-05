@@ -106,7 +106,7 @@ Images are only cached by filename, so a replaced photo needs a new filename.
 
 ## Adding a piece to the gallery
 
-Every photo on the site carries a small "© TEA REX WOODWORKS" watermark in the bottom-right corner. `tools/add-image.py` resizes, watermarks and converts in one step, so don't put photos into `site/img/` by hand.
+Every photo on the site is watermarked: the logo laid translucently across the whole image, with "© 2026 TEA REX WOODWORKS, LLC" (the year it was stamped) through the middle, so it can't be cropped out. `tools/add-image.py` resizes, watermarks and converts in one step, so don't put photos into `site/img/` by hand.
 
 1. Export the photo as JPEG or PNG (for an iPhone HEIC: `sips -s format jpeg photo.heic --out photo.jpg`), then:
    ```
@@ -116,7 +116,7 @@ Every photo on the site carries a small "© TEA REX WOODWORKS" watermark in the 
 2. Paste the block into the gallery in `site/index.html` and fill in the `alt` text, the title and the tag.
 3. Set `data-kind` to `wildlife`, `signs`, `portraits` or `art` so the filter buttons pick it up.
 
-Always start from the original photo, not a file already in `site/img/`. The script won't watermark the same file twice (stamped files carry a copyright tag in their metadata), and it refuses to overwrite an existing name. A WebP that got into `site/img/` without a watermark can be stamped in place with `tools/add-image.py --stamp site/img/name-700.webp site/img/name-1400.webp`. The wording, size and opacity of the mark are constants at the top of the script.
+Always start from the original photo, not a file already in `site/img/`. The script won't watermark the same file twice (stamped files carry a copyright tag in their metadata), and it refuses to overwrite an existing name. A WebP that got into `site/img/` without a watermark can be stamped in place with `tools/add-image.py --stamp site/img/name-700.webp site/img/name-1400.webp`. The owner name, logo size and opacities are constants at the top of the script; the logo itself is `site/img/logo-white.png`.
 
 ## Copy to confirm with the owner
 
