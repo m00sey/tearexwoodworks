@@ -11,6 +11,7 @@ site/                     the deployable. Upload this folder's contents anywhere
   .nojekyll               tells GitHub Pages to serve the folder untouched
 .github/workflows/        preview deploy of site/ to GitHub Pages (for tweaking, not his hosting)
 tools/add-image.py        resizes and watermarks a photo for the gallery
+tools/hero-image.py       makes the banner image, with the dark fade baked into the file
 README.md                 this file
 ```
 
@@ -117,6 +118,10 @@ Every photo on the site is watermarked: the logo laid translucently across the w
 3. Set `data-kind` to `wildlife`, `signs`, `portraits` or `art` so the filter buttons pick it up.
 
 Always start from the original photo, not a file already in `site/img/`. The script won't watermark the same file twice (stamped files carry a copyright tag in their metadata), and it refuses to overwrite an existing name. A WebP that got into `site/img/` without a watermark can be stamped in place with `tools/add-image.py --stamp site/img/name-700.webp site/img/name-1400.webp`. The owner name, logo size and opacities are constants at the top of the script; the logo itself is `site/img/logo-white.png`.
+
+## The banner image
+
+The banner (`site/img/lion-pride-hero.webp`) has no watermark because the headline sits over it. Instead, most of the dark fade is baked into the file, so a copy saved from the page is the darkened one. The rest of the fade is the `.hero::after` gradient in `site/css/site.css`; the two multiply to the full strength, so change them together. To rebuild or replace it: `tools/hero-image.py photo.jpg`. Don't run `add-image.py --stamp` over it.
 
 ## Copy to confirm with the owner
 
