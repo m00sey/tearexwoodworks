@@ -102,7 +102,7 @@ Bluehost fronts the site with Cloudflare, and `.htaccess` tells browsers to cach
 2. Upload the changed files and the new `index.html`.
 3. If people still see the old version, cPanel → Cloudflare → Purge Everything.
 
-Images are only cached by filename, so a replaced photo needs a new filename.
+Images are only cached by filename, so a replaced photo needs a new filename (that's why the current ones end in `-v2`: they were renamed when the watermark was added). After uploading renamed photos, delete the old files from `public_html/img` so the previous versions can't still be fetched by URL.
 
 ## Adding a piece to the gallery
 
