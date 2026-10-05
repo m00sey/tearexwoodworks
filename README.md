@@ -107,7 +107,7 @@ Images are only cached by filename, so a replaced photo needs a new filename (th
 
 ## Adding a piece to the gallery
 
-Every photo on the site is watermarked: the logo laid translucently across the whole image, with "© 2026 TEA REX WOODWORKS, LLC" (the year it was stamped) through the middle, so it can't be cropped out. `tools/add-image.py` resizes, watermarks and converts in one step, so don't put photos into `site/img/` by hand.
+Every gallery photo is watermarked (the banner and the CNC shop photo are not): the logo laid translucently across the whole image, with "© 2026 TEA REX WOODWORKS, LLC" (the year it was stamped) through the middle, so it can't be cropped out. `tools/add-image.py` resizes, watermarks and converts in one step, so don't put photos into `site/img/` by hand.
 
 1. Export the photo as JPEG or PNG (for an iPhone HEIC: `sips -s format jpeg photo.heic --out photo.jpg`), then:
    ```
