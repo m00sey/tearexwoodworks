@@ -255,9 +255,9 @@ p { margin: 0; max-width: var(--measure); }
 .process { background: var(--dark); color: var(--on-dark); }
 .process .eyebrow { color: var(--wood); }
 .process .section-head p { color: var(--on-dark-muted); }
-.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; counter-reset: step; list-style: none; margin: 0; padding: 0; }
-@media (max-width: 960px) { .steps { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .steps { grid-template-columns: 1fr; } }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; counter-reset: step; list-style: none; margin: 0; padding: 0; }
+@media (max-width: 760px) { .steps { grid-template-columns: 1fr; max-width: 420px; } }
+.step img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); margin-bottom: .5rem; }
 .step { border-top: 2px solid var(--wood); padding-top: 1rem; display: grid; gap: .5rem; align-content: start; }
 .step::before {
   counter-increment: step; content: "Step " counter(step);
@@ -288,15 +288,22 @@ p { margin: 0; max-width: var(--measure); }
 .facts strong { display: block; font-weight: 700; }
 .facts span { color: var(--muted); font-size: .92rem; }
 
+/* ---------- craft shows ---------- */
+.shows { border-top: 1px solid var(--line); }
+.shows-photos { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.25rem; }
+@media (max-width: 640px) { .shows-photos { grid-template-columns: 1fr; } }
+.shows-photos figure { margin: 0; }
+.shows-photos img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow); }
+.shows-photos figure:last-child img { aspect-ratio: 1; object-position: center 40%; }
+@media (max-width: 640px) { .shows-photos figure:last-child img { aspect-ratio: 4 / 5; } }
+.shows-photos figcaption { margin-top: .6rem; font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
 /* ---------- contact ---------- */
 .contact { background: var(--ground-2); border-top: 1px solid var(--line); }
 .contact .wrap { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(2rem, 5vw, 5rem); }
 @media (max-width: 860px) { .contact .wrap { grid-template-columns: 1fr; } }
 .contact-side { display: grid; gap: 1.25rem; align-content: start; }
 .contact-side p { color: var(--ink-2); }
-.contact-photo { margin: .5rem 0 0; }
-.contact-photo img { width: 100%; height: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
-.contact-photo figcaption { margin-top: .6rem; font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .direct-line { font-weight: 700; font-size: 1.15rem; }
 .direct-line a { color: var(--ink); text-decoration: none; }
 .direct-line a:hover { color: var(--accent); }
