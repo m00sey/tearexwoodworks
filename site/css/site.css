@@ -294,6 +294,9 @@ p { margin: 0; max-width: var(--measure); }
 @media (max-width: 860px) { .contact .wrap { grid-template-columns: 1fr; } }
 .contact-side { display: grid; gap: 1.25rem; align-content: start; }
 .contact-side p { color: var(--ink-2); }
+.contact-photo { margin: .5rem 0 0; }
+.contact-photo img { width: 100%; height: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
+.contact-photo figcaption { margin-top: .6rem; font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .direct-line { font-weight: 700; font-size: 1.15rem; }
 .direct-line a { color: var(--ink); text-decoration: none; }
 .direct-line a:hover { color: var(--accent); }
