@@ -11,6 +11,13 @@
 name = "tearex-contact"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
+workers_dev = true   # keep the workers.dev URL alive alongside the custom domains: the form posts to it
+
+# Custom domains (the zone tearexwoodworks.com is in this account).
+routes = [
+  { pattern = "tearexwoodworks.com", custom_domain = true },
+  { pattern = "www.tearexwoodworks.com", custom_domain = true },
+]
 
 [assets]
 directory = "../site"
@@ -23,16 +30,11 @@ binding = "DB"
 database_name = "tearex-contact"
 database_id = "8db788b1-17b7-4a4e-8d33-4c6e136fc2b8"
 
-# Custom domains: uncomment once the zone tearexwoodworks.com is active in this account, then deploy.
-# routes = [
-#   { pattern = "tearexwoodworks.com", custom_domain = true },
-#   { pattern = "www.tearexwoodworks.com", custom_domain = true },
-# ]
 
-# Email Routing sender: uncomment once Email Routing is enabled on the zone and MAIL_TO is a
-# verified destination address there. Then the Worker sends through Cloudflare and Resend is a fallback.
-# [[send_email]]
-# name = "EMAIL"
+# Email Routing sender (Email Routing is enabled on the zone; MAIL_TO is a verified destination
+# address there). Resend, if RESEND_API_KEY is ever set, is the fallback.
+[[send_email]]
+name = "EMAIL"
 
 [triggers]
 crons = ["17 * * * *"]   # hourly: retry any submission whose email didn't go out

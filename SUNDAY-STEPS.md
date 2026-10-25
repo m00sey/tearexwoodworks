@@ -4,8 +4,20 @@ Two parts. **Part 1** gets the quote form working again this weekend without tou
 **Part 2** is the longer move off Bluehost onto Cloudflare proper, which removes cPanel, PHP, the zip
 uploads and the Resend account.
 
-Where things stand (25 Oct 2026): the new form backend is already deployed and tested. The site files
-in `site/` already point at it. What's missing is the outgoing email, the Bluehost upload, and analytics.
+**Status, evening of 25 Oct 2026: Part 2 is done.** The domain is on Cloudflare, the Worker serves the
+site and the form, Email Routing delivers to his Gmail (tested end to end, reply address correct), and
+he is a read-only member of the account. Part 1 is superseded; only these loose ends remain:
+
+- Bluehost: upload the zip anyway for visitors with stale DNS during the first day, delete the two PHP
+  files there, then cancel the plan after two weeks.
+- Web Analytics: Analytics & Logs → Web Analytics → enable for the zone.
+- Turnstile keys (optional), GitHub `CLOUDFLARE_API_TOKEN` (optional), revoke the old Gmail App Password.
+- Phone check: `http://tearexwoodworks.com` and `www.tearexwoodworks.com` both land on the https apex.
+
+The form keeps posting to the workers.dev URL on purpose: that hostname has no Cloudflare security
+filtering in front of it, so a challenge page can never swallow a submission. See the README.
+
+Everything below is kept as the record of what was done and why.
 
 - Form endpoint: https://tearex-contact.tearexwoodworks.workers.dev/submit
 - Admin page: https://tearex-contact.tearexwoodworks.workers.dev/admin (user `tearex`)

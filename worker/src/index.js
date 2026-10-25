@@ -21,9 +21,10 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // www (or any alias) -> the canonical host, once the custom domain is live.
-    if (env.CANONICAL_HOST && url.hostname !== env.CANONICAL_HOST && url.hostname.endsWith('.' + env.CANONICAL_HOST)) {
-      url.hostname = env.CANONICAL_HOST;
+    // http -> https, and www (or any alias) -> the canonical host.
+    if (url.protocol === 'http:' || (env.CANONICAL_HOST && url.hostname !== env.CANONICAL_HOST && url.hostname.endsWith('.' + env.CANONICAL_HOST))) {
+      url.protocol = 'https:';
+      if (env.CANONICAL_HOST && url.hostname.endsWith('.' + env.CANONICAL_HOST)) url.hostname = env.CANONICAL_HOST;
       return Response.redirect(url.toString(), 301);
     }
 

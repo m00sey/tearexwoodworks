@@ -25,22 +25,25 @@ Everything outside `site/` is repo plumbing. Only `site/` goes to a host.
 
 ## Hosting
 
-The domain is registered at Network Solutions and its DNS is served by Bluehost's nameservers. The site is moving to Cloudflare (see `SUNDAY-STEPS.md`, Part 2): the Worker in `worker/` already serves the whole site at https://tearex-contact.tearexwoodworks.workers.dev, and the custom domain is switched on at cutover. Until then Bluehost is live, which is Option A below.
+Since 25 Oct 2026 the site runs on Cloudflare. The domain's DNS is on Cloudflare (nameservers `frida.ns.cloudflare.com` and `max.ns.cloudflare.com`, set at Bluehost, which is the registrar of record via Network Solutions). One Worker, `worker/`, serves `site/` as static files on `tearexwoodworks.com` and `www` (which redirects to the apex, as does plain http), and runs the quote-form API. The Cloudflare account is the user's; the owner is a read-only member of it so he can see everything.
 
-**Option A: stay on Bluehost, drop WordPress (easiest, nothing to move)**
-1. Bluehost cPanel → File Manager → `public_html`.
-2. Delete the WordPress files (or move them into a `_old` folder for a while).
-3. Upload the contents of `site/` (`index.html`, `css/`, `js/`, `img/`) into `public_html`.
-4. Done. Domain, SSL and DNS stay exactly as they are. He keeps paying Bluehost, but the site is now four files instead of a WordPress install to keep patched.
+Bluehost still has the old files and is being kept for two weeks as a safety net, then cancelled. Nothing points at it any more once DNS caches expire. `Makefile`, `site/.htaccess` and the zip exist only for that window.
 
-**Option B: Cloudflare Pages (free, cancel Bluehost)**
-1. Create a free Cloudflare account and add `tearexwoodworks.com`. Cloudflare copies the existing DNS records.
-2. Cloudflare gives you two nameservers. Log in to Network Solutions and replace the Bluehost nameservers with those. Takes up to a day to propagate.
-3. Cloudflare → Workers & Pages → Create → Pages → Direct upload. Drag the `site/` folder in. Build command: none.
-4. Custom domains → add `tearexwoodworks.com` and `www`. Cloudflare writes the DNS record itself.
-5. Once it resolves, cancel the Bluehost plan.
+### Deploying
 
-Before doing B, check whether any email at the domain runs through Bluehost. His contact address is a Gmail one, so probably not, but if there are MX records they need to survive the move (step 1 copies them).
+```
+cd worker && npx wrangler deploy
+```
+
+That uploads changed files from `site/` and the Worker code, and it is live worldwide in seconds. No cache purge; HTML is revalidated on every request and the css/js links carry `?v=` versions. `.github/workflows/deploy.yml` does the same on every push to `main` once the repo has the `CLOUDFLARE_API_TOKEN` secret. First-time setup on a new machine: `npx wrangler login` with the Apple sign-in account.
+
+Cache rules live in `site/_headers`; files that must not be uploaded are listed in `site/.assetsignore` (the Makefile has the equivalent list for the zip).
+
+### Things learned the hard way
+
+- When `routes` with `custom_domain = true` are present, Wrangler disables the workers.dev URL unless `workers_dev = true` is set. The form posts to the workers.dev URL, so it must stay on.
+- Cloudflare challenges some IP addresses on the zone ("Just a moment" pages); the user's own home connection is one. Browsers pass it, tools don't. The form posts to the workers.dev hostname, which has no such filtering, so a challenge can never eat a submission. Moving the form to `/api/submit` on the main domain would need a WAF custom rule that skips Security Level for `/api/*`.
+- Email Routing takes a few minutes after a destination address is verified before the `send_email` binding accepts it. The hourly retry covers that.
 
 ## Preview builds (GitHub Pages)
 
@@ -48,31 +51,21 @@ This is for tweaking, not for his hosting. The workflow in `.github/workflows/pa
 
 One-time setup after pushing the repo: Settings → Pages → Source: **GitHub Actions**. That's it. All paths in the page are relative, so it works under the `/tearexwoodworks/` subpath without any changes.
 
-When a version is ready for him, run `make zip` and upload `dist/tearexwoodworks-site.zip` to Bluehost as in Option A.
+This preview still works but is no longer needed: the live site deploys in seconds and `wrangler versions upload` gives a preview URL for a change. Remove `pages.yml` when convenient.
 
 ## The quote form
 
-The form posts to a small Cloudflare Worker, `worker/`, at `https://tearex-contact.tearexwoodworks.workers.dev/submit`. It is not on Bluehost at all, so Bluehost's PHP, mail server and Cloudflare challenge are out of the picture. The Worker:
+The form posts to the Worker at `https://tearex-contact.tearexwoodworks.workers.dev/submit` (the same code also answers at `/api/submit` on the main domain). The Worker:
 
 1. **Stores the request first** in a D1 (SQLite) database. From that moment it cannot be lost.
-2. **Emails it** to his inbox through Resend, with `Reply-To` set to the customer. If the email fails for any reason the row stays `pending` and an hourly cron retries it.
-3. **Shows the result honestly.** With JS the page sends in the background and shows success or the specific problem in place. Without JS the browser posts directly and comes back to `/?sent=1` or `/?sent=0&why=...` as before. Nothing is ever reported as sent unless it was stored.
+2. **Emails it** to his inbox through Cloudflare Email Routing (the `send_email` binding; `noreply@tearexwoodworks.com` to the verified destination address), with `Reply-To` set to the customer. If the email fails for any reason the row stays `pending` or `failed` and an hourly cron retries it. If `RESEND_API_KEY` is ever set, Resend is used as a fallback sender.
+3. **Shows the result honestly.** With JS the page sends in the background and shows success or the specific problem in place. Without JS the browser posts directly and comes back to `/?sent=1` or `/?sent=0&why=...`. Nothing is ever reported as sent unless it was stored.
 
-Spam control is the same honeypot and 3-second timing check as before, plus a limit of 5 requests per IP per 10 minutes. Flagged requests are stored as `spam` and not emailed, but they are visible (and restorable) in the admin page, so a false positive is no longer a lost order.
+Spam control: honeypot, 3-second timing check, and a limit of 5 requests per IP per 10 minutes. Flagged requests are stored as `spam` and not emailed, but they are visible and restorable in the admin page, so a false positive is no longer a lost order. Turnstile is wired in and switches on when `data-turnstile-sitekey` on the form and the `TURNSTILE_SECRET` secret are both set.
 
-**Admin page:** `https://tearex-contact.tearexwoodworks.workers.dev/admin` lists every request, newest first, with its email status and a "Send now" button. `/admin.csv` downloads them. User `tearex`; the password is the `ADMIN_PASS` secret. `/health` is a public JSON status line (count of requests, how many are still awaiting email, whether email is configured).
+**Admin page:** `https://tearexwoodworks.com/api/admin` (or the same path on the workers.dev host) lists every request, newest first, with its email status and a "Send now" button. `/api/admin.csv` downloads them. User `tearex`; the password is the `ADMIN_PASS` secret. `/api/health` is a public JSON status line.
 
-**Deploying changes** (needs Node and a Cloudflare login; `npx wrangler login` once):
-```
-cd worker && npx wrangler deploy
-```
-Config is `worker/wrangler.toml`; code is `worker/src/index.js`; `worker/schema.sql` is applied with `npx wrangler d1 execute tearex-contact --remote --file schema.sql`. Secrets are set with `npx wrangler secret put NAME`: `MAIL_TO` (his inbox), `ADMIN_PASS`, and `RESEND_API_KEY`. Until `RESEND_API_KEY` is set, requests are saved and the admin page shows a warning that email is off.
-
-**Resend setup** (once): create a free account at resend.com, add the domain `tearexwoodworks.com`, and add the DNS records it gives you in Bluehost's cPanel → Zone Editor. Then create an API key and `npx wrangler secret put RESEND_API_KEY`. The `MAIL_FROM` in `wrangler.toml` must be at the verified domain.
-
-**Moving the Worker to his own Cloudflare account** later: `npx wrangler login` as him, `npx wrangler d1 create tearex-contact`, paste the new `database_id` into `wrangler.toml`, apply `schema.sql`, set the three secrets, deploy. Copy the data with `npx wrangler d1 export tearex-contact --remote --output dump.sql` from the old account and `d1 execute --file dump.sql` on the new one. The workers.dev hostname is per account, so change the form's `action` in `site/index.html` and the URL above to match.
-
-The preview on GitHub Pages sends for real (its origin is in `ALLOWED_ORIGINS`), which is the easiest way to test end to end; the admin page shows which origin a request came from.
+Secrets (set with `cd worker && npx wrangler secret put NAME`): `MAIL_TO` (his Gmail, which must be a verified destination address in Email Routing), `ADMIN_PASS`, optional `RESEND_API_KEY` and `TURNSTILE_SECRET`. `worker/schema.sql` is applied with `npx wrangler d1 execute tearex-contact --remote --file schema.sql`.
 
 ## Contact details on the page
 
@@ -93,7 +86,7 @@ Needs his phone in hand and his Gmail logged in. About 30 minutes.
 5. Install the Google Voice app on his phone and sign in. Texts to the number arrive there, and he can reply from it.
 6. Decide whether it goes on the site. It's not there right now.
 
-**2. Form** — runs on Cloudflare, nothing to set up on Bluehost. Send one test request from the live site and check it arrives in his inbox and on the admin page.
+**2. Form** — done. Send one test request from the live site now and then and check it arrives in his inbox and on the admin page.
 
 **3. Put both into the site (5 min)**
 1. The form needs nothing on Bluehost.
@@ -104,22 +97,10 @@ Needs his phone in hand and his Gmail logged in. About 30 minutes.
    The style for that line already exists.
 3. Commit, push, wait a minute, hard-refresh the preview and check both the number and the form.
 
-**4. Bluehost (10 min)**
-1. Bluehost → cPanel → File Manager → `public_html`.
-2. Select everything there and move it into a new folder called `_old-wordpress`. Don't delete it yet.
-3. Upload the contents of `site/` (`index.html`, `css`, `js`, `img`, `.nojekyll` is harmless). Zip the folder first and use "Extract" in File Manager, it's faster than uploading 30 files.
-4. Load tearexwoodworks.com. If the old site still shows, it's Bluehost's Cloudflare cache: cPanel → Cloudflare → Purge, or wait a few minutes.
-5. Once it's right, delete `_old-wordpress` and, in Bluehost's WordPress tools, remove the WordPress install so it stops needing updates.
 
-## Updating the live site (cache)
+## Updating the live site
 
-Bluehost fronts the site with Cloudflare, and `.htaccess` tells browsers to cache css/js for a day and images for 30 days. So after uploading a changed file:
-
-1. Bump the version on the css/js links in `site/index.html` (`?v=20260922` → today's date). A changed `index.html` is always fetched fresh; the version string makes the browser fetch the new css/js too.
-2. Upload the changed files and the new `index.html`.
-3. If people still see the old version, cPanel → Cloudflare → Purge Everything.
-
-Images are only cached by filename, so a replaced photo needs a new filename (that's why the current ones end in `-v2`: they were renamed when the watermark was added). After uploading renamed photos, delete the old files from `public_html/img` so the previous versions can't still be fetched by URL.
+Edit, then `cd worker && npx wrangler deploy` (or push to `main` once the deploy workflow has its token). Bump the `?v=` on the css/js links in `site/index.html` when those files change. Replaced photos still need a new filename, since images are cached for 30 days by `site/_headers`.
 
 ## Adding a piece to the gallery
 
