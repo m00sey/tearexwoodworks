@@ -4,7 +4,20 @@ Two parts. **Part 1** gets the quote form working again this weekend without tou
 **Part 2** is the longer move off Bluehost onto Cloudflare proper, which removes cPanel, PHP, the zip
 uploads and the Resend account.
 
-**Status, evening of 25 Oct 2026: Part 2 is done.** The domain is on Cloudflare, the Worker serves the
+**Open blocker (evening of 25 Oct):** Cloudflare's edge still routes `tearexwoodworks.com` to Bluehost.
+Bluehost's "Cloudflare" was a Cloudflare for SaaS custom hostname in Bluehost's account, and the edge gives
+that priority over the same hostname in our free zone. Evidence: requests to the domain never reach the
+Worker (logs), responses carry Apache 404s and Bluehost's cache, and the certificate served was issued on
+13 Sep (Bluehost's), not today's. Our DNS is correct (both `Worker` rows present). Fix: Bluehost must
+remove the hostname from their CDN integration (support chat; wording in the chat log), or Cloudflare
+expires it itself about a week after DNS stopped pointing at Bluehost. Until then: the site works via
+Bluehost (new page uploaded, `bluehost/contact.php` (uploaded to public_html) forwards the old form POST to the Worker), the form and
+admin page work on the workers.dev host, our Web Analytics sees nothing, and changes must be uploaded to
+Bluehost as well as deployed. Re-test with `curl -sI https://tearexwoodworks.com/api/health` from a
+connection Bluehost doesn't challenge, or check the certificate date: `echo | openssl s_client -connect
+tearexwoodworks.com:443 -servername tearexwoodworks.com | openssl x509 -noout -dates`.
+
+**Status, evening of 25 Oct 2026: Part 2 is done on our side.** The domain is on Cloudflare, the Worker serves the
 site and the form, Email Routing delivers to his Gmail (tested end to end, reply address correct), and
 he is a read-only member of the account. Part 1 is superseded; only these loose ends remain:
 
