@@ -89,12 +89,14 @@ async function submit(request, env, cors) {
     spam_reason: '',
   };
 
-  // Spam signals. Stored and flagged, never emailed, but recoverable from /admin.
-  if (String(data._honey ?? '') !== '') {
-    row.status = 'spam'; row.spam_reason = 'honeypot filled';
-  } else {
-    const stamp = Number(data._t || 0);
-    if (stamp > 0 && Date.now() - stamp < 3000) { row.status = 'spam'; row.spam_reason = 'submitted under 3s'; }
+  // Spam signals. Only the timing check withholds the email (stored as spam, recoverable from /admin).
+  // A filled honeypot is recorded and shown, but still emailed: browser autofill fills hidden fields
+  // too, and a real customer matters more than a spam email. Turnstile is the real bot check.
+  const stamp = Number(data._t || 0);
+  if (stamp > 0 && Date.now() - stamp < 3000) {
+    row.status = 'spam'; row.spam_reason = 'submitted under 3s';
+  } else if (String(data._honey ?? '') !== '') {
+    row.spam_reason = 'honeypot filled (emailed anyway)';
   }
 
   // Validation. These come back to the page as a message under the form.
@@ -213,7 +215,9 @@ function emailText(env, row) {
   ].join('\n');
 }
 
-function emailSubject(env, row) { return `${env.MAIL_SUBJECT} from ${row.name} (#${row.id})`; }
+function emailSubject(env, row) {
+  return `${env.MAIL_SUBJECT} from ${row.name} (#${row.id})` + (row.spam_reason ? ' (possible bot, check before replying)' : '');
+}
 
 // Cloudflare Email Routing (send_email binding). Needs the zone on Cloudflare with Email Routing on.
 async function sendViaEmailRouting(env, row) {
@@ -377,7 +381,8 @@ async function admin(request, env, url, path) {
 
 function badge(r) {
   if (r.status === 'spam') return `<span class="b spamb">spam: ${esc(r.spam_reason)}</span>`;
-  if (r.email_status === 'sent') return `<span class="b sent">emailed</span>`;
+  const note = r.spam_reason ? `<br><small>${esc(r.spam_reason)}</small>` : '';
+  if (r.email_status === 'sent') return `<span class="b sent">emailed</span>${note}`;
   const e = r.email_error ? `<br><small>${esc(r.email_error.slice(0, 120))}</small>` : '';
   return `<span class="b ${esc(r.email_status)}">${esc(r.email_status)} (${r.email_attempts} tries)</span>${e}`;
 }
