@@ -1,0 +1,11 @@
+# Not uploaded to Cloudflare as static assets.
+.htaccess
+.nojekyll
+.assetsignore
+contact-config.php
+contact-log.txt
+.DS_Store
+*.jpg
+*.jpeg
+*.JPG
+*.heic

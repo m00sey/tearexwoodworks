@@ -1,0 +1,11 @@
+# Cache rules for the Cloudflare-served site (replaces the ExpiresByType lines in .htaccess).
+# HTML is revalidated every time; css/js carry ?v= in the HTML; images change by filename.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+/css/*
+  Cache-Control: public, max-age=86400
+/js/*
+  Cache-Control: public, max-age=86400
+/img/*
+  Cache-Control: public, max-age=2592000, immutable

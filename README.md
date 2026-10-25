@@ -9,9 +9,15 @@ site/                     the deployable. Upload this folder's contents anywhere
   js/site.js              mobile menu, gallery filters, lightbox (page works without it)
   img/                    photos as WebP, two sizes each (-700 for the grid, -1400 for full view)
   .nojekyll               tells GitHub Pages to serve the folder untouched
+  _headers                cache rules when served by Cloudflare (replaces the .htaccess ones)
+  .assetsignore           files in this folder that Cloudflare must not upload
 .github/workflows/        preview deploy of site/ to GitHub Pages (for tweaking, not his hosting)
 tools/add-image.py        resizes and watermarks a photo for the gallery
 tools/hero-image.py       makes the banner image, with the dark fade baked into the file
+worker/                   the Cloudflare Worker: serves site/ as static files and runs the quote-form API (D1)
+  .github/workflows/deploy.yml   deploys it on push to main once CLOUDFLARE_API_TOKEN is set
+Makefile                  `make zip` builds dist/tearexwoodworks-site.zip for Bluehost
+SUNDAY-STEPS.md           the to-do list: finish the form fix now, then move everything to Cloudflare
 README.md                 this file
 ```
 
@@ -19,7 +25,7 @@ Everything outside `site/` is repo plumbing. Only `site/` goes to a host.
 
 ## Hosting
 
-The domain is registered at Network Solutions and its DNS is served by Bluehost's nameservers. He's staying on Bluehost, which is Option A. Option B is there if he ever wants to stop paying for hosting.
+The domain is registered at Network Solutions and its DNS is served by Bluehost's nameservers. The site is moving to Cloudflare (see `SUNDAY-STEPS.md`, Part 2): the Worker in `worker/` already serves the whole site at https://tearex-contact.tearexwoodworks.workers.dev, and the custom domain is switched on at cutover. Until then Bluehost is live, which is Option A below.
 
 **Option A: stay on Bluehost, drop WordPress (easiest, nothing to move)**
 1. Bluehost cPanel → File Manager → `public_html`.
@@ -42,21 +48,31 @@ This is for tweaking, not for his hosting. The workflow in `.github/workflows/pa
 
 One-time setup after pushing the repo: Settings → Pages → Source: **GitHub Actions**. That's it. All paths in the page are relative, so it works under the `/tearexwoodworks/` subpath without any changes.
 
-When a version is ready for him, upload the contents of `site/` to Bluehost as in Option A.
+When a version is ready for him, run `make zip` and upload `dist/tearexwoodworks-site.zip` to Bluehost as in Option A.
 
 ## The quote form
 
-The form posts to `contact.php` on the same domain, which sends it to his inbox through Gmail's SMTP server using his Google account and an App Password (Google account → Security → 2-Step Verification → App passwords). Gmail to Gmail, so nothing lands in spam and Bluehost's mail server, which his plan doesn't include, is never involved. If the App Password is left blank the handler falls back to PHP `mail()`, which is unreliable on Bluehost. No third-party form service, nothing that a filtering DNS can block. Spam control is a honeypot field, a 3-second timing check, and validation (real email, details at least 10 characters).
+The form posts to a small Cloudflare Worker, `worker/`, at `https://tearex-contact.tearexwoodworks.workers.dev/submit`. It is not on Bluehost at all, so Bluehost's PHP, mail server and Cloudflare challenge are out of the picture. The Worker:
 
-The destination address lives in `site/contact-config.php`, which is gitignored so it never lands in the repo. `contact-config.sample.php` shows the shape. The zip built from `site/` includes the real config, so a Bluehost upload has everything; a fresh clone of the repo does not, and needs the file recreated from the sample.
+1. **Stores the request first** in a D1 (SQLite) database. From that moment it cannot be lost.
+2. **Emails it** to his inbox through Resend, with `Reply-To` set to the customer. If the email fails for any reason the row stays `pending` and an hourly cron retries it.
+3. **Shows the result honestly.** With JS the page sends in the background and shows success or the specific problem in place. Without JS the browser posts directly and comes back to `/?sent=1` or `/?sent=0&why=...` as before. Nothing is ever reported as sent unless it was stored.
 
-`.htaccess` blocks direct requests to both config files.
+Spam control is the same honeypot and 3-second timing check as before, plus a limit of 5 requests per IP per 10 minutes. Flagged requests are stored as `spam` and not emailed, but they are visible (and restorable) in the admin page, so a false positive is no longer a lost order.
 
-After a submission the handler redirects back to `/?sent=1#contact` (or `sent=0`) and the page shows a message.
+**Admin page:** `https://tearex-contact.tearexwoodworks.workers.dev/admin` lists every request, newest first, with its email status and a "Send now" button. `/admin.csv` downloads them. User `tearex`; the password is the `ADMIN_PASS` secret. `/health` is a public JSON status line (count of requests, how many are still awaiting email, whether email is configured).
 
-Every attempt writes one line to `public_html/contact-log.txt` (blocked from the web): time, IP, outcome. `contact.php?ping=1` in a browser confirms the handler is live, the log is writable, and which transport is configured. If the App Password is ever revoked, the log shows `smtp FAILED: AUTH pass`, and a new one goes into `contact-config.php`.
+**Deploying changes** (needs Node and a Cloudflare login; `npx wrangler login` once):
+```
+cd worker && npx wrangler deploy
+```
+Config is `worker/wrangler.toml`; code is `worker/src/index.js`; `worker/schema.sql` is applied with `npx wrangler d1 execute tearex-contact --remote --file schema.sql`. Secrets are set with `npx wrangler secret put NAME`: `MAIL_TO` (his inbox), `ADMIN_PASS`, and `RESEND_API_KEY`. Until `RESEND_API_KEY` is set, requests are saved and the admin page shows a warning that email is off.
 
-The GitHub Pages preview can't run PHP, so the script disables the form there with a note. FormSubmit is no longer used.
+**Resend setup** (once): create a free account at resend.com, add the domain `tearexwoodworks.com`, and add the DNS records it gives you in Bluehost's cPanel → Zone Editor. Then create an API key and `npx wrangler secret put RESEND_API_KEY`. The `MAIL_FROM` in `wrangler.toml` must be at the verified domain.
+
+**Moving the Worker to his own Cloudflare account** later: `npx wrangler login` as him, `npx wrangler d1 create tearex-contact`, paste the new `database_id` into `wrangler.toml`, apply `schema.sql`, set the three secrets, deploy. Copy the data with `npx wrangler d1 export tearex-contact --remote --output dump.sql` from the old account and `d1 execute --file dump.sql` on the new one. The workers.dev hostname is per account, so change the form's `action` in `site/index.html` and the URL above to match.
+
+The preview on GitHub Pages sends for real (its origin is in `ALLOWED_ORIGINS`), which is the easiest way to test end to end; the admin page shows which origin a request came from.
 
 ## Contact details on the page
 
@@ -77,10 +93,10 @@ Needs his phone in hand and his Gmail logged in. About 30 minutes.
 5. Install the Google Voice app on his phone and sign in. Texts to the number arrive there, and he can reply from it.
 6. Decide whether it goes on the site. It's not there right now.
 
-**2. Form** — self-hosted in `contact.php`, nothing to set up. Test it once from the live site after upload.
+**2. Form** — runs on Cloudflare, nothing to set up on Bluehost. Send one test request from the live site and check it arrives in his inbox and on the admin page.
 
 **3. Put both into the site (5 min)**
-1. The form needs nothing; the config ships in the zip.
+1. The form needs nothing on Bluehost.
 2. If the number is going on the page, add under the contact heading paragraph in `site/index.html`:
    ```html
    <p class="direct-line">Call or text <a href="tel:+1XXXXXXXXXX">(XXX) XXX-XXXX</a></p>

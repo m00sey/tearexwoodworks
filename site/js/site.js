@@ -1,28 +1,29 @@
 // Tea Rex Woodworks — small progressive enhancements. Page works fully without this file.
 (function () {
-  // Quote form. Posts to contact.php on the same host (see site/contact.php).
+  // Quote form. Posts to the Cloudflare Worker in worker/ (the action attribute on the form).
+  // Without JS the browser posts there directly and comes back to /?sent=1 or /?sent=0&why=...
   var form = document.getElementById('quote-form');
   var status = document.getElementById('form-status');
   if (form) {
-    // Timestamp the form so contact.php can drop instant bot submissions.
+    // Timestamp the form so the backend can flag instant bot submissions.
     var stamp = document.getElementById('f-t');
     if (stamp) stamp.value = String(Date.now());
 
-    // Result message after the redirect back from contact.php.
-    var params = new URLSearchParams(location.search);
-    var sent = params.get('sent');
-    if (sent !== null && status) {
-      var why = {
-        name: 'That didn’t send: please add your name.',
-        email: 'That didn’t send: that email address doesn’t look right.',
-        details: 'That didn’t send: tell us a little more about the piece (a sentence is plenty).'
-      }[params.get('why')] || 'That didn’t send. Check your name, email and details, then try again.';
-      status.textContent = sent === '1' ? 'Sent. You’ll hear back by email.' : why;
-      status.className = 'form-status ' + (sent === '1' ? 'is-ok' : 'is-err');
+    var messages = {
+      ok: 'Sent. You’ll hear back by email.',
+      name: 'That didn’t send: please add your name.',
+      email: 'That didn’t send: that email address doesn’t look right.',
+      details: 'That didn’t send: tell us a little more about the piece (a sentence is plenty).',
+      verify: 'That didn’t send: the bot check didn’t pass. Please wait for it to finish and try again.',
+      busy: 'That didn’t send: too many requests from this connection. Please wait a few minutes and try again.',
+      network: 'That didn’t send: couldn’t reach the server. Check your connection and try again in a minute.',
+      other: 'That didn’t send. Check your name, email and details, then try again.'
+    };
+    function show(kind) {
+      status.textContent = messages[kind] || messages.other;
+      status.className = 'form-status ' + (kind === 'ok' ? 'is-ok' : 'is-err');
       status.hidden = false;
-      if (sent === '1') form.reset();
-      history.replaceState(null, '', location.pathname + '#quote-form');
-      // Make sure the message is actually on screen, whatever the layout.
+      if (kind === 'ok') form.reset();
       setTimeout(function () {
         status.scrollIntoView({ block: 'center', behavior: 'auto' });
         status.setAttribute('tabindex', '-1');
@@ -30,12 +31,52 @@
       }, 0);
     }
 
-    // Only the real host runs contact.php. Previews (GitHub Pages, artifacts) just show the form.
-    if (!/(^|\.)tearexwoodworks\.com$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
-      var note = document.getElementById('form-note');
-      if (note) note.textContent = 'Preview only. The form sends on the live site.';
-      form.addEventListener('submit', function (e) { e.preventDefault(); });
+    // Result message after the no-JS redirect back from the backend.
+    var params = new URLSearchParams(location.search);
+    var sent = params.get('sent');
+    if (sent !== null && status) {
+      show(sent === '1' ? 'ok' : (params.get('why') || 'other'));
+      history.replaceState(null, '', location.pathname + '#quote-form');
     }
+
+    // Turnstile (bot check) loads only when the form carries a site key. Without one the form
+    // works as before and the backend relies on the honeypot, timing and rate limit alone.
+    var sitekey = form.getAttribute('data-turnstile-sitekey');
+    var slot = document.getElementById('turnstile');
+    if (sitekey && slot) {
+      window.__trexTurnstile = function () {
+        window.turnstile.render(slot, { sitekey: sitekey, theme: 'auto', size: 'flexible' });
+      };
+      var ts = document.createElement('script');
+      ts.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__trexTurnstile';
+      ts.async = true; ts.defer = true;
+      document.head.appendChild(ts);
+    }
+
+    // With JS: send in the background and show the result in place, so the page never
+    // reloads and a failure is visible instead of silent.
+    var button = form.querySelector('button[type="submit"]');
+    form.addEventListener('submit', function (e) {
+      if (!window.fetch || !window.URLSearchParams) return; // old browser: plain POST + redirect
+      e.preventDefault();
+      if (button) { button.disabled = true; button.textContent = 'Sending…'; }
+      status.hidden = true;
+      fetch(form.action, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: new URLSearchParams(new FormData(form))
+      }).then(function (res) {
+        return res.json().catch(function () { return { ok: false, why: 'other' }; });
+      }).then(function (r) {
+        show(r.ok ? 'ok' : (r.why || 'other'));
+      }).catch(function () {
+        show('network');
+      }).then(function () {
+        if (button) { button.disabled = false; button.textContent = 'Send request'; }
+        if (stamp) stamp.value = String(Date.now());
+        if (window.turnstile && slot && sitekey) window.turnstile.reset(slot);
+      });
+    });
   }
 
   // Mobile nav

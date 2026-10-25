@@ -19,14 +19,3 @@ AddType image/webp .webp
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 </IfModule>
-
-# Never serve the config file, only contact.php may include it.
-<Files "contact-config.php">
-  Require all denied
-</Files>
-<Files "contact-config.sample.php">
-  Require all denied
-</Files>
-<Files "contact-log.txt">
-  Require all denied
-</Files>

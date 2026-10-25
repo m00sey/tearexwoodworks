@@ -325,6 +325,8 @@ p { margin: 0; max-width: var(--measure); }
 .form-status.is-ok { background: var(--accent-soft); color: var(--ink); border-color: var(--accent); }
 .form-status.is-err { background: var(--surface); color: var(--ink); border-color: var(--wood); }
 .honey { position: absolute; left: -9999px; }
+.turnstile:empty { display: none; }
+.turnstile { margin-top: .25rem; }
 
 /* ---------- footer ---------- */
 .site-footer { background: var(--dark); color: var(--on-dark-muted); font-size: .92rem; }
